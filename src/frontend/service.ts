@@ -103,15 +103,19 @@ export class FluencyBuilderService implements Service {
   async validateLesson(): Promise<void> {
     const req = await getRequest(FluencyBuilderValidationRequestKey);
     if (req === undefined || req.body === null)
-      throw Error("Could not validate lesson");
+      throw Error("Could not validate lesson - no validation request captured. Please complete at least part of a lesson first.");
 
     console.debug("sending validation request", req);
 
-    // For Fluency Builder, we need to send the captured GraphQL request
-    // The request should already contain the proper lesson completion data
-    await sendRequest(req);
-
-    console.debug("successfully sent validation request");
+    try {
+      // For Fluency Builder, we need to send the captured GraphQL request
+      // The request should already contain the proper lesson completion data
+      await sendRequest(req);
+      console.debug("successfully sent validation request");
+    } catch (error) {
+      console.error("Failed to send validation request:", error);
+      throw Error("Failed to validate lesson. The captured request may not be suitable for validation.");
+    }
   }
 }
 

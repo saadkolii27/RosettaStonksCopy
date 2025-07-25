@@ -120,14 +120,35 @@ const fluencyBuilderValidationRequest: RequestFilter = {
     const url = URL.parse(details.url);
     if (url?.pathname !== "/graphql") return false;
 
-    const body = JSON.parse(details.body);
-    // Look for GraphQL operations that might be related to lesson completion/validation
-    return body.operationName === "CompleteLesson" || 
-           body.operationName === "SubmitLesson" ||
-           body.operationName === "ValidateLesson" ||
-           body.operationName === "FinishLesson" ||
-           (body.query && body.query.includes("completeLesson")) ||
-           (body.query && body.query.includes("submitLesson"));
+    try {
+      const body = JSON.parse(details.body);
+      
+      // Log all GraphQL operations for debugging
+      console.debug("Fluency Builder GraphQL operation:", body.operationName, body);
+      
+      // Look for GraphQL operations that might be related to lesson completion/validation
+      // This is a permissive filter that captures potential validation requests
+      const operationName = body.operationName?.toLowerCase() || '';
+      const query = body.query?.toLowerCase() || '';
+      
+      const validationKeywords = [
+        'complete', 'submit', 'validate', 'finish', 'end', 
+        'score', 'result', 'grade', 'assessment', 'evaluation'
+      ];
+      
+      const isValidationRelated = validationKeywords.some(keyword => 
+        operationName.includes(keyword) || query.includes(keyword)
+      );
+      
+      if (isValidationRelated) {
+        console.debug("Captured potential validation request:", body.operationName);
+      }
+      
+      return isValidationRelated;
+    } catch (e) {
+      console.error("Failed to parse GraphQL body:", e);
+      return false;
+    }
   },
   onMatched: storeRequest(FluencyBuilderValidationRequestKey),
 };
