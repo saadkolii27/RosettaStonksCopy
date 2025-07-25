@@ -131,6 +131,7 @@ const fluencyBuilderValidationRequest: RequestFilter = {
       const operationName = body.operationName?.toLowerCase() || '';
       const query = body.query?.toLowerCase() || '';
       
+      // Keywords that indicate lesson completion, scoring, or validation operations
       const validationKeywords = [
         'complete', 'submit', 'validate', 'finish', 'end', 
         'score', 'result', 'grade', 'assessment', 'evaluation'
