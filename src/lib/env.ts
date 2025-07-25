@@ -2,6 +2,7 @@ export const FoundationsTimeRequestKey = "foundations_time_request";
 export const FoundationsCourseRequestKey = "foundations_course_request";
 
 export const FluencyBuilderTimeRequestKey = "fluency_builder_time_request";
+export const FluencyBuilderValidationRequestKey = "fluency_builder_validation_request";
 
 export const BeforeSendHeadersParams = ["requestHeaders"];
 

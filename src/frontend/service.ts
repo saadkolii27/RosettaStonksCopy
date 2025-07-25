@@ -1,5 +1,6 @@
 import {
   FluencyBuilderTimeRequestKey,
+  FluencyBuilderValidationRequestKey,
   FoundationsCourseRequestKey,
   FoundationsTimeRequestKey,
 } from "../lib/env.ts";
@@ -61,7 +62,7 @@ export async function getService(): Promise<Service> {
 export class FluencyBuilderService implements Service {
   async isFeatureReady(feature: Feature): Promise<boolean> {
     if (feature === Feature.ValidateLesson) {
-      return false;
+      return (await getRequest(FluencyBuilderValidationRequestKey)) !== undefined;
     } else if (feature === Feature.AddTime) {
       const request = await getRequest(FluencyBuilderTimeRequestKey);
       if (request?.body == undefined) return false;
@@ -99,8 +100,22 @@ export class FluencyBuilderService implements Service {
     console.debug("successfully sent request");
   }
 
-  validateLesson(): Promise<void> {
-    throw new Error("TODO: not implemented");
+  async validateLesson(): Promise<void> {
+    const req = await getRequest(FluencyBuilderValidationRequestKey);
+    if (req === undefined || req.body === null)
+      throw Error("Could not validate lesson - no validation request captured. Please complete at least part of a lesson first.");
+
+    console.debug("sending validation request", req);
+
+    try {
+      // For Fluency Builder, we need to send the captured GraphQL request
+      // The request should already contain the proper lesson completion data
+      await sendRequest(req);
+      console.debug("successfully sent validation request");
+    } catch (error) {
+      console.error("Failed to send validation request:", error);
+      throw Error("Failed to validate lesson. The captured request may not be suitable for validation.");
+    }
   }
 }
 

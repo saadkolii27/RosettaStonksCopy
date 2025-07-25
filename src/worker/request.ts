@@ -6,6 +6,7 @@ import {
   BeforeSendRequestParams,
   FluencyBuilderRequestFilter,
   FluencyBuilderTimeRequestKey,
+  FluencyBuilderValidationRequestKey,
 } from "../lib/env.ts";
 
 import { Request } from "../lib/request.ts";
@@ -108,6 +109,51 @@ const fluencyBuilderTimeRequest: RequestFilter = {
   onMatched: storeRequest(FluencyBuilderTimeRequestKey),
 };
 
+const fluencyBuilderValidationRequest: RequestFilter = {
+  filter: (details: Request) => {
+    if (
+      details.method !== "POST" ||
+      details.body === null ||
+      details.tabId === -1
+    )
+      return false;
+    const url = URL.parse(details.url);
+    if (url?.pathname !== "/graphql") return false;
+
+    try {
+      const body = JSON.parse(details.body);
+      
+      // Log all GraphQL operations for debugging
+      console.debug("Fluency Builder GraphQL operation:", body.operationName, body);
+      
+      // Look for GraphQL operations that might be related to lesson completion/validation
+      // This is a permissive filter that captures potential validation requests
+      const operationName = body.operationName?.toLowerCase() || '';
+      const query = body.query?.toLowerCase() || '';
+      
+      // Keywords that indicate lesson completion, scoring, or validation operations
+      const validationKeywords = [
+        'complete', 'submit', 'validate', 'finish', 'end', 
+        'score', 'result', 'grade', 'assessment', 'evaluation'
+      ];
+      
+      const isValidationRelated = validationKeywords.some(keyword => 
+        operationName.includes(keyword) || query.includes(keyword)
+      );
+      
+      if (isValidationRelated) {
+        console.debug("Captured potential validation request:", body.operationName);
+      }
+      
+      return isValidationRelated;
+    } catch (e) {
+      console.error("Failed to parse GraphQL body:", e);
+      return false;
+    }
+  },
+  onMatched: storeRequest(FluencyBuilderValidationRequestKey),
+};
+
 function setupRequestListeners(
   urlFilters: { urls: string[] },
   filters: Array<RequestFilter>,
@@ -157,6 +203,7 @@ export function setupListeners(): void {
 
   setupRequestListeners(FluencyBuilderRequestFilter, [
     fluencyBuilderTimeRequest,
+    fluencyBuilderValidationRequest,
   ]);
 
   browser.webRequest.onBeforeSendHeaders.addListener(
