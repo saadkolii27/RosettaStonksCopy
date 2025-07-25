@@ -6,6 +6,7 @@ import {
   BeforeSendRequestParams,
   FluencyBuilderRequestFilter,
   FluencyBuilderTimeRequestKey,
+  FluencyBuilderValidationRequestKey,
 } from "../lib/env.ts";
 
 import { Request } from "../lib/request.ts";
@@ -108,6 +109,29 @@ const fluencyBuilderTimeRequest: RequestFilter = {
   onMatched: storeRequest(FluencyBuilderTimeRequestKey),
 };
 
+const fluencyBuilderValidationRequest: RequestFilter = {
+  filter: (details: Request) => {
+    if (
+      details.method !== "POST" ||
+      details.body === null ||
+      details.tabId === -1
+    )
+      return false;
+    const url = URL.parse(details.url);
+    if (url?.pathname !== "/graphql") return false;
+
+    const body = JSON.parse(details.body);
+    // Look for GraphQL operations that might be related to lesson completion/validation
+    return body.operationName === "CompleteLesson" || 
+           body.operationName === "SubmitLesson" ||
+           body.operationName === "ValidateLesson" ||
+           body.operationName === "FinishLesson" ||
+           (body.query && body.query.includes("completeLesson")) ||
+           (body.query && body.query.includes("submitLesson"));
+  },
+  onMatched: storeRequest(FluencyBuilderValidationRequestKey),
+};
+
 function setupRequestListeners(
   urlFilters: { urls: string[] },
   filters: Array<RequestFilter>,
@@ -157,6 +181,7 @@ export function setupListeners(): void {
 
   setupRequestListeners(FluencyBuilderRequestFilter, [
     fluencyBuilderTimeRequest,
+    fluencyBuilderValidationRequest,
   ]);
 
   browser.webRequest.onBeforeSendHeaders.addListener(

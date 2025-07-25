@@ -116,7 +116,9 @@ validate lesson again until it works. It should work after 3/4 times maximum.
 
 #### Validating lesson in Fluency builder
 
-Right now, the validate lesson feature is not available on rosetta stonks.
+To validate a lesson in Fluency Builder, you need to start a lesson and go through the questions. Once you've answered at least one question properly, the extension should capture the lesson completion request. When you click the `validate lesson` button, it will automatically complete the lesson using the captured request data.
+
+Note: The lesson validation feature for Fluency Builder works by intercepting and replaying the lesson completion requests. Make sure to start and interact with a lesson first so the extension can capture the necessary request data.
 
 ## Building the application
 
